@@ -1,0 +1,302 @@
+amcl:
+  ros__parameters:
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    alpha5: 0.2
+    base_frame_id: "base_link"
+    beam_skip_distance: 0.5
+    beam_skip_error_threshold: 0.9
+    beam_skip_threshold: 0.3
+    do_beamskip: false
+    global_frame_id: "map"
+    lambda_short: 0.1
+    laser_likelihood_max_dist: 2.0
+    laser_max_range: 12.0
+    laser_min_range: 0.05
+    laser_model_type: "likelihood_field"
+    max_beams: 80
+    max_particles: 2000
+    min_particles: 500
+    odom_frame_id: "odom"
+    pf_err: 0.05
+    pf_z: 0.99
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0
+    resample_interval: 1
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    save_pose_rate: 0.5
+    sigma_hit: 0.2
+    tf_broadcast: true
+    transform_tolerance: 0.5
+    update_min_a: 0.2
+    update_min_d: 0.25
+    z_hit: 0.5
+    z_max: 0.05
+    z_rand: 0.5
+    z_short: 0.05
+    scan_topic: scan
+    map_topic: map
+    set_initial_pose: false
+    always_reset_initial_pose: false
+    first_map_only: false
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
+
+bt_navigator:
+  ros__parameters:
+    global_frame: map
+    robot_base_frame: "base_link"
+    transform_tolerance: 0.5
+    filter_duration: 0.3
+    default_nav_to_pose_bt_xml: "$(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+    default_nav_through_poses_bt_xml: "$(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+    always_reload_bt_xml: false
+    goal_blackboard_id: goal
+    goals_blackboard_id: goals
+    path_blackboard_id: path
+    navigators: [ 'navigate_to_pose', 'navigate_through_poses' ]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugins: [ "progress_checker" ]
+    goal_checker_plugins: [ "goal_checker" ]
+    controller_plugins: [ "FollowPath" ]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.1
+      movement_time_allowance: 10.0
+
+    goal_checker:
+      stateful: true
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.15
+      yaw_goal_tolerance: 0.30
+
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: true
+      publish_local_plan: true
+      publish_global_plan: true
+      publish_trajectories: true
+      publish_transformed_plan: true
+
+      # dynamics (required)
+      acc_lim_x: 3.0
+      acc_lim_theta: 3.2
+      decel_lim_x: -3.0
+      decel_lim_theta: -3.2
+
+      # velocity bounds and samples
+      min_vel_x: 0.002
+      max_vel_x: 0.8
+
+
+      min_vel_y: 0.0
+      max_vel_y: 0.0
+
+      min_speed_theta: 0.10
+      max_vel_theta: 0.6
+      vx_samples: 32
+      vtheta_samples: 32
+      vy_samples: 0
+
+      # simulation and sampling
+      sim_time: 2.0
+      forward_point_distance: 0.25
+      linear_granularity: 0.02
+      angular_granularity: 0.01
+      transform_tolerance: 1.0
+      time_granularity: 0.05
+
+      # tolerances / stopped handling
+      xy_goal_tolerance: 0.15
+      yaw_goal_tolerance: 0.30
+      trans_stopped_velocity: 0.03
+      rot_stopped_velocity: 0.03
+      short_circuit_trajectory_evaluation: true
+      stateful: true
+
+      # start with a smaller critic set to isolate sampling
+      critics: [ "BaseObstacle", "PathAlign", "GoalDist" ]
+#      critics: [ "BaseObstacle" ]
+      BaseObstacle.scale: 0.01
+      PathAlign.scale: 0.06
+      RotateToGoal.scale: 0.02
+      rotate_to_goal: true
+      rotate_to_goal_threshold: 0.52
+      GoalDist.scale: 0.10
+
+    enable_stamped_cmd_vel: false
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 10.0
+      publish_frequency: 10.0
+      global_frame: odom
+      robot_base_frame: "base_link"
+      rolling_window: true
+      width: 8
+      height: 8
+      resolution: 0.03
+      footprint: "[[0.1475, 0.12], [0.1475, -0.12], [-0.1475, -0.12], [-0.1475, 0.12]]"
+      plugins: [ "obstacle_layer", "voxel_layer", "inflation_layer" ]
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.15
+        cost_scaling_factor: 5.0
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: true
+          marking: true
+          data_type: "LaserScan"
+
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: true
+        publish_voxel_map: true
+        origin_z: 0.0
+        z_resolution: 0.05
+        z_voxels: 16
+        max_obstacle_height: 2.0
+        mark_threshold: 0
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: true
+          marking: true
+          data_type: "LaserScan"
+          raytrace_max_range: 5.0
+          obstacle_max_range: 5.0
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 3.0
+      publish_frequency: 3.0
+      global_frame: map
+      robot_base_frame: "base_link"
+      transform_tolerance: 0.5
+      footprint: "[[0.1475, 0.12], [0.1475, -0.12], [-0.1475, -0.12], [-0.1475, 0.12]]"
+      resolution: 0.05
+      track_unknown_space: true
+      plugins: [ "static_layer", "obstacle_layer", "voxel_layer", "inflation_layer" ]
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: true
+          marking: true
+          data_type: "LaserScan"
+          raytrace_max_range: 5.0
+          obstacle_max_range: 5.0
+
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: true
+        publish_voxel_map: true
+        origin_z: 0.0
+        z_resolution: 0.05
+        z_voxels: 16
+        max_obstacle_height: 2.0
+        mark_threshold: 0
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: true
+          marking: true
+          data_type: "LaserScan"
+          raytrace_max_range: 5.0
+          obstacle_max_range: 5.0
+
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.15
+        cost_scaling_factor: 5.0
+
+collision_monitor:
+  ros__parameters:
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    cmd_vel_in_topic: "cmd_vel_smoothed"
+    cmd_vel_out_topic: "cmd_vel"
+    state_topic: "collision_monitor_state"
+    transform_tolerance: 0.5
+    source_timeout: 5.0
+    stop_pub_timeout: 2.0
+    base_shift_correction: True
+
+    observation_sources: [ "scan" ]
+    scan:
+      type: "scan"
+      topic: "/scan"
+      topic: "/scan"
+      enabled: true
+
+    polygons: [ "PolygonStop", "PolygonSlow" ]
+
+    PolygonStop:
+      type: "polygon"
+      points: "[[0.1475, 0.12], [0.1475, -0.12], [-0.1475, -0.12], [-0.1475, 0.12]]"
+      action_type: "stop"
+      min_points: 4
+      visualize: True
+      polygon_pub_topic: "polygon_stop"
+      enabled: True
+
+    PolygonSlow:
+      type: "polygon"
+      points: "[[0.2, 0.2], [0.2, -0.2], [-0.2, -0.2], [-0.2, 0.2]]"
+      action_type: "slowdown"
+      min_points: 4
+      slowdown_ratio: 0.3
+      visualize: True
+      polygon_pub_topic: "polygon_slowdown"
+      enabled: True
+
+docking_server:
+  ros__parameters:
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    global_frame_id: "map"
+    transform_tolerance: 0.5
+    dock_plugins: [ "SimpleChargingDock" ]
+
+    SimpleChargingDock:
+      plugin: "opennav_docking::SimpleChargingDock"
+      dock_frame: "dock"
+      approach_distance: 0.5
+      align_tolerance: 0.05
+      max_retries: 3

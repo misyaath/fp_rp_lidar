@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <profiles>
+        <participant profile_name="default_participant_profile" is_default_profile="true">
+            <rtps>
+                <useBuiltinTransports>true</useBuiltinTransports>
+            </rtps>
+        </participant>
+
+        <publisher profile_name="default_publisher_profile" is_default_profile="true">
+            <qos>
+                <historyQos>
+                    <kind>KEEP_LAST</kind>
+                    <depth>32</depth>
+                </historyQos>
+                <resourceLimitsQos>
+                    <max_samples>1000</max_samples>
+                    <allocated_samples>500</allocated_samples>
+                </resourceLimitsQos>
+            </qos>
+        </publisher>
+
+        <subscriber profile_name="default_subscriber_profile" is_default_profile="true">
+            <qos>
+                <historyQos>
+                    <kind>KEEP_LAST</kind>
+                    <depth>32</depth>
+                </historyQos>
+                <resourceLimitsQos>
+                    <max_samples>1000</max_samples>
+                    <allocated_samples>500</allocated_samples>
+                </resourceLimitsQos>
+            </qos>
+        </subscriber>
+    </profiles>
+</dds>

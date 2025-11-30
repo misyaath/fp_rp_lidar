@@ -1,0 +1,30 @@
+# Build artifacts
+build/
+devel/
+install/
+log/
+cmake-build-debug/
+.catkin_tools/
+
+# Python compiled files
+*.pyc
+__pycache__/
+
+# C++ build artifacts
+*.o
+*.lo
+*.la
+*.so
+*.a
+*.dll
+
+# Editor and OS specific files
+.DS_Store
+.vscode/
+.idea/
+*~
+#*#
+
+# Temporary files
+*.swp
+*.bak
